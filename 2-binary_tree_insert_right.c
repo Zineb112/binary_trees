@@ -8,7 +8,7 @@
  * Return: If parent is NULL or an error occurs - NULL.
  *
  * Description: If parent already has a right-child, the new node
- *              takes its place the new one take the right-child of the new node.
+ * takes its place the new one take the right-child of the new node.
  */
 binary_tree_t *binary_tree_insert_right(binary_tree_t *parent, int value)
 {
