@@ -1,122 +1,115 @@
 #include "binary_trees.h"
 
-levelorder_queue_t *create_node(binary_tree_t *node);
-void free_queue(levelorder_queue_t *head);
-void pint_push(binary_tree_t *node, levelorder_queue_t *head,
-		levelorder_queue_t **tail, void (*func)(int));
-void pop(levelorder_queue_t **head);
-void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int));
-
 /**
- * create_node - Creates a new levelorder_queue_t node.
- * @node: The binary tree node for the new node to contain.
- *
- * Return: If an error occurs, NULL.
- *         Otherwise, a pointer to the new node.
+ * struct node_s - singly linked list
+ * @node: Pointer to a binary tree node
+ * @next: Pointer to the next node in the list
  */
-levelorder_queue_t *create_node(binary_tree_t *node)
+
+typedef struct node_s
 {
-	levelorder_queue_t *new;
+	const binary_tree_t *node;
+	struct node_s *next;
+} ll;
 
-	new = malloc(sizeof(levelorder_queue_t));
-	if (new == NULL)
-		return (NULL);
-
-	new->node = node;
-	new->next = NULL;
-
-	return (new);
-}
+ll *append(ll *head, const binary_tree_t *btnode);
+void free_list(ll *head);
+ll *get_children(ll *head, const binary_tree_t *parent);
+void levels_rec(ll *head, void (*func)(int));
 
 /**
- * free_queue - Frees a levelorder_queue_t queue.
- * @head: A pointer to the head of the queue.
+ * binary_tree_levelorder - Performs level-order traversal of a binary tree.
+ * @tree: A Pointer to the  root node of the tree to traverse.
+ * @func: A Pointer to a  function to call for each node.
  */
-void free_queue(levelorder_queue_t *head)
-{
-	levelorder_queue_t *tmp;
 
-	while (head != NULL)
-	{
-		tmp = head->next;
-		free(head);
-		head = tmp;
-	}
-}
-
-/**
- * pint_push - Runs a function on a given binary tree node and
- *             pushes its children into a levelorder_queue_t queue.
- * @node: The binary tree node to print and push.
- * @head: A double pointer to the head of the queue.
- * @tail: A double pointer to the tail of the queue.
- * @func: A pointer to the function to call on @node.
- *
- * Description: Upon malloc failure, exits with a status code of 1.
- */
-void pint_push(binary_tree_t *node, levelorder_queue_t *head,
-		levelorder_queue_t **tail, void (*func)(int))
-{
-	levelorder_queue_t *new;
-
-	func(node->n);
-	if (node->left != NULL)
-	{
-		new = create_node(node->left);
-		if (new == NULL)
-		{
-			free_queue(head);
-			exit(1);
-		}
-		(*tail)->next = new;
-		*tail = new;
-	}
-	if (node->right != NULL)
-	{
-		new = create_node(node->right);
-		if (new == NULL)
-		{
-			free_queue(head);
-			exit(1);
-		}
-		(*tail)->next = new;
-		*tail = new;
-	}
-}
-
-/**
- * pop - Pops the  head of a  levelorder queue t queue.
- * @head: double  pointer to the head of the queue.
- */
-void pop(levelorder_queue_t **head)
-{
-	levelorder_queue_t *tmp;
-
-	tmp = (*head)->next;
-	free(*head);
-	*head = tmp;
-}
-
-/**
- * binary_tree_levelorder - Traverses a binary tree using level-order traversal.
- *
- * @tree: pointer to the root  node of the tree to traverse.
- * @func: pointer to a function to call for each node.
- */
 void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int))
 {
-	levelorder_queue_t *head, *tail;
+	ll *children = NULL;
 
-	if (tree == NULL || func == NULL)
+	func(tree->n);
+	children = get_children(children, tree);
+	levels_rec(children, func);
+
+	free_list(children);
+}
+
+/**
+ * levels_rec - Calls the specified  function on all nodes at each level.
+ * @head: A Pointer to the head of a  linked list with nodes at one level.
+ * @func: A Pointer to a function to  call for each node.
+ */
+
+void levels_rec(ll *head, void (*func)(int))
+{
+	ll *children = NULL, *curr = NULL;
+
+	if (!head)
 		return;
-
-	head = tail = create_node((binary_tree_t *)tree);
-	if (head == NULL)
-		return;
-
-	while (head != NULL)
+	for (curr = head; curr != NULL; curr = curr->next)
 	{
-		pint_push(head->node, head, &tail, func);
-		pop(&head);
+		func(curr->node->n);
+		children = get_children(children, curr->node);
+	}
+	levels_rec(children, func);
+	free_list(children);
+}
+
+/**
+ * get_children - appends children  of parent to linked list.
+ * @head: A Pointer to head of linked  list where children will be appended.
+ * @parent: A Pointer to  node whose  children we want to append.
+ * Return: A Pointer to head of linked  list of children.
+ */
+ll *get_children(ll *head, const binary_tree_t *parent)
+{
+	if (parent->left)
+		head = append(head, parent->left);
+	if (parent->right)
+		head = append(head, parent->right);
+	return (head);
+}
+
+/**
+ * append - adds a new node at the end of a linkedlist
+ * @head: pointer to head of linked list
+ * @btnode: A const binary tree node to append
+ * Return: A pointer to head, or NULL on failure
+ */
+ll *append(ll *head, const binary_tree_t *btnode)
+{
+	ll *new = NULL, *last = NULL;
+
+	new = malloc(sizeof(*new));
+	if (new)
+	{
+		new->node = btnode;
+		new->next = NULL;
+		if (!head)
+			head = new;
+		else
+		{
+			last = head;
+			while (last->next)
+				last = last->next;
+			last->next = new;
+		}
+	}
+	return (head);
+}
+
+/**
+ * free_list - free the nodes in a linked list
+ * @head: A pointer to the head of list_t linked list
+ */
+void free_list(ll *head)
+{
+	ll *ptr = NULL;
+
+	while (head)
+	{
+		ptr = head->next;
+		free(head);
+		head = ptr;
 	}
 }
